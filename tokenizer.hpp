@@ -4,6 +4,7 @@
 #include <string>
 #include <cmath>
 #include <stdexcept>
+#include <iostream>
 
 enum struct TokenType{
     LEFT_BRACE,  // {
@@ -13,7 +14,8 @@ enum struct TokenType{
     COMMA,       // ,
     COLON,       // :
     STRING,      // "..."
-    NUMBER,      // 123, -12.34
+    INTEGER,     // 123, -1029
+    FLOAT,       // 12.34, -13.45
     TRUE,        // true
     FALSE,       // false
     NULL_TYPE,   // null
@@ -47,7 +49,7 @@ public:
                 if(c == 't'){ pos += 4; return {TokenType::TRUE, "true"}; };
                 if(c == 'f'){ pos += 5; return {TokenType::FALSE, "false"}; };
                 if(c == 'n'){ pos += 4;return {TokenType::NULL_TYPE, "null"}; };
-                throw std::invalid_argument("Invalid character: " + std::string(1, c));
+                throw std::invalid_argument("Invalid character: " + std::string(1, c) + " position: " + std::to_string(pos));
             }
     }
 
@@ -58,8 +60,31 @@ private:
     Token parseString(){
         pos++; // skip starting quote
         std::string value{};
-        while(input[pos] != '"' && pos < input.size()){
+        bool end_of_input = false;
+        bool backslashed_string = false;
+
+        std::cout << "test";
+        // while(input[pos] != '"' && pos < input.size()){
+        while(!end_of_input){
+            if(input[pos] == 'H'){
+                std::cout << "test";
+                backslashed_string = true;
+            }
+
+            if(pos > input.size()){
+                end_of_input = true;
+                break;
+            }
+
+            if(!backslashed_string){
+                if(input[pos] == '"'){
+                    end_of_input = true;
+                    break;
+                }
+            }
+            // std::cout << input[pos];
             value += input[pos];
+            backslashed_string = false;
             pos++;
         }
         pos++ ; // skip ending quote
@@ -68,11 +93,15 @@ private:
 
     Token parseDigit(){
         std::string value{};
+        bool isFloat = false;
         while((std::isdigit(input[pos]) || input[pos] == '.' || input[pos] == '-') && (pos < input.size())){
+            if(input[pos] == '.'){
+                isFloat = true;
+            }
             value += input[pos];
             pos++;
         }
-        return {TokenType::NUMBER, value};
+        return {(!isFloat) ? TokenType::INTEGER : TokenType::FLOAT, value}; 
     }
 
     void skipWhitespace(){

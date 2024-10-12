@@ -34,6 +34,21 @@ public:
 
     ~JsonValue() = default;
 
+    JsonObject asObject(){
+        return getValue<JsonObject>();
+    }
+
+
+    template<typename T>
+    T getValue(){
+        if(std::holds_alternative<T>(value)){
+            return std::get<T>(value);
+        }
+        else{
+            throw std::bad_variant_access();
+        }
+    }    
+
     friend std::ostream& operator<<(std::ostream& os, const JsonValue& json){
         std::visit([&os](auto&& arg){
             using T = std::decay_t<decltype(arg)>;
@@ -67,6 +82,15 @@ public:
             else if constexpr(std::is_same_v<T, std::monostate>){
                 os << "null";
             }
+            else if constexpr(std::is_same_v<T, bool>){
+                // bool broke, dont ask why, this fixes it 
+                if(arg == 0){
+                    os << "false";
+                }
+                else{
+                    os << "true";
+                }
+            }
             else{
                 os << arg;
             }
@@ -95,7 +119,7 @@ public:
         return JsonValue(arr);
     }
 
-    static JsonValue Object(const std::initializer_list<std::pair<std::string, JsonValue>>& list){
+    static JsonValue Object(const std::initializer_list<std::pair<const char*, JsonValue>>& list){
         JsonObject map;
         for(const auto& [key, val] : list){
             map[key] = std::make_shared<JsonValue>(val);
@@ -120,39 +144,142 @@ public:
         return os << '}';
     }
 
-    // TODO //
-    // - Think about splitting the parsing into its own class.
-    //   It does get rather complex later on, especially if you want to support syntax checking.
-    //   I'll leave it as is for now, for debugging purposes.
-    //
-    // - Syntax checking
-    // - Add support for comments?
-    // - Actually parse the input
-
-    friend std::ifstream& operator>>(std::ifstream& is, const Json& json){
-        std::stringstream buffer;
-        buffer << is.rdbuf();
-        Tokenizer tokenizer(buffer.str());
-        for(auto token = tokenizer.tokenize(); token.type != TokenType::END; token = tokenizer.tokenize()){
-            std::cout << token.value << std::endl;
-        }
-        return is;
-    }
-
     void write(const std::string& fileName){
         std::ofstream file(fileName);
         file << *this;
         file.close();
     }
 
-    void parse(const std::string& fileName){
-        std::ifstream file(fileName);
-        file >> *this;
-        file.close();
+private:
+    std::unordered_map<std::string, JsonValue> data;
+};
+
+// TODO //
+// - Syntax checking
+// - Add support for comments?
+// - Actually parse the input
+
+class JsonParse{
+public:
+
+    JsonParse() = default;
+    ~JsonParse() = default;
+
+    Json parse(const std::string& fileName){
+        Json json;
+
+        std::ifstream file{fileName};
+        std::stringstream buffer;
+        buffer << file.rdbuf();
+        Tokenizer tokenizer(buffer.str());
+        tokenizer.tokenize();
+        for(auto token = tokenizer.tokenize(); token.type != TokenType::END; token = tokenizer.tokenize()){
+            switch(token.type){
+                case TokenType::COMMA:
+                    break;
+                case TokenType::STRING:
+                    key = token.value;
+                    break;
+                case TokenType::LEFT_BRACE:
+                    json[key] = parseObject(tokenizer);
+                    break;
+                case TokenType::LEFT_BRACKET:
+                    json[key] = parseArray(tokenizer);
+                    break;
+                default:
+                    break;
+
+            }
+        }
+        return json;
     }
 
 private:
-    std::unordered_map<std::string, JsonValue> data;
+    std::string key{};
+
+    JsonValue parseObject(Tokenizer& tokenizer){
+        JsonObject map;
+        std::pair<std::string, std::shared_ptr<JsonValue>> pair;
+        bool keyFound = false;
+        for(Token token = tokenizer.tokenize(); token.type != TokenType::RIGHT_BRACE; token = tokenizer.tokenize()){
+            if(!keyFound){
+                pair.first = token.value;
+                keyFound = true;
+            }
+            else{
+                switch(token.type){
+                    case TokenType::COLON:
+                        break;
+                    case TokenType::COMMA:
+                        keyFound = false;
+                        break;
+                    case TokenType::LEFT_BRACE:
+                        pair.second = std::make_shared<JsonValue>(parseObject(tokenizer));
+                        break;
+                    case TokenType::LEFT_BRACKET:
+                        pair.second = std::make_shared<JsonValue>(parseArray(tokenizer));
+                        break;
+                    case TokenType::INTEGER:
+                        pair.second = std::make_shared<JsonValue>(std::stoi(token.value));
+                        break;
+                    case TokenType::FLOAT:
+                        pair.second = std::make_shared<JsonValue>(std::stod(token.value));
+                        break;
+                    case TokenType::TRUE:
+                        pair.second = std::make_shared<JsonValue>(true);
+                        break;
+                    case TokenType::FALSE:
+                        pair.second = std::make_shared<JsonValue>(false);
+                        break;
+                    case TokenType::NULL_TYPE:
+                        pair.second = std::make_shared<JsonValue>(Json::Null());
+                        break;
+                    default:
+                        pair.second = std::make_shared<JsonValue>(token.value);
+                        break;
+                }
+            }
+            map[pair.first] = pair.second;
+        }
+        return map;
+    }
+
+    JsonValue parseArray(Tokenizer& tokenizer){
+        JsonArray array;
+        for(Token token = tokenizer.tokenize(); token.type != TokenType::RIGHT_BRACKET; token = tokenizer.tokenize()){
+            switch(token.type){
+                case TokenType::COMMA:
+                        break;
+                    case TokenType::LEFT_BRACE:
+                        array.push_back(std::make_shared<JsonValue>(parseObject(tokenizer)));
+                        break;
+                    case TokenType::LEFT_BRACKET:
+                        array.push_back(std::make_shared<JsonValue>(parseArray(tokenizer)));
+                        break;
+                    case TokenType::INTEGER:
+                        array.push_back(std::make_shared<JsonValue>(std::stoi(token.value)));
+                        break;
+                    case TokenType::FLOAT:
+                        array.push_back(std::make_shared<JsonValue>(std::stod(token.value)));
+                        break;
+                    case TokenType::TRUE:
+                        array.push_back(std::make_shared<JsonValue>(true));
+                        break;
+                    case TokenType::FALSE:
+                        array.push_back(std::make_shared<JsonValue>(false));
+                        break;
+                    case TokenType::NULL_TYPE:
+                        array.push_back(std::make_shared<JsonValue>(Json::Null()));
+                        break;
+                    default:
+                        array.push_back(std::make_shared<JsonValue>(token.value));
+                        break;
+            }
+
+        } 
+        return array;
+    }
+
 };
 
 #endif
