@@ -1,10 +1,9 @@
 #include "jsonParse.hpp"
-// #include <include/nlohmann/json.hpp>
 #include <iostream>
 
 int main(){
-    Json json;
-    // std::pair<std::string, std::string> test = {"name", "John Doe"};
+    // writing test
+    // Json json;
 
     // json["person"] = Json::Object({
     //     {"name", "John Doe"},
@@ -24,22 +23,12 @@ int main(){
     //             })}
     //         })}
     //     })}});    
-    json["test"] =
-    Json::Object({
-        {"testValue", Json::Null()},
-        {"testNumber", true},
-        {"testObject", Json::Object({
-            {"testString", "Hello World\\ "}
-        })},
-        {"testValue3", 3.14}
-    });
+    // json.write("testFile.json");
 
-
-    json.write("testFile.json");
-    JsonParse jsonParse;
-    // Json json = jsonParse.parse("large-file.json");
-    // Json json = jsonParse.parse("testFile.json");
-    // std::cout << jsonParse.parse("testFile.json") << std::endl;
+    // parsing test
+    // JsonParse jsonParse;
+    // Json parse = jsonParse.parse("large-file.json");
+    // parse.write("testFile.json");
 
     // TODO
     // What the fuck

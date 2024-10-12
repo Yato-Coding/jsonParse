@@ -49,7 +49,7 @@ public:
                 if(c == 't'){ pos += 4; return {TokenType::TRUE, "true"}; };
                 if(c == 'f'){ pos += 5; return {TokenType::FALSE, "false"}; };
                 if(c == 'n'){ pos += 4;return {TokenType::NULL_TYPE, "null"}; };
-                throw std::invalid_argument("Invalid character: " + std::string(1, c) + " position: " + std::to_string(pos));
+                throw std::invalid_argument("Invalid character: " + input.substr(pos-5, 25) + " position: " + std::to_string(pos));
             }
     }
 
@@ -63,28 +63,30 @@ private:
         bool end_of_input = false;
         bool backslashed_string = false;
 
-        std::cout << "test";
-        // while(input[pos] != '"' && pos < input.size()){
         while(!end_of_input){
-            if(input[pos] == 'H'){
-                std::cout << "test";
-                backslashed_string = true;
-            }
-
             if(pos > input.size()){
                 end_of_input = true;
                 break;
             }
 
-            if(!backslashed_string){
-                if(input[pos] == '"'){
-                    end_of_input = true;
-                    break;
-                }
+
+            if(input[pos] == '\\' && !backslashed_string){
+                backslashed_string = true;
+                value += input[pos];
             }
-            // std::cout << input[pos];
-            value += input[pos];
-            backslashed_string = false;
+            else if(input[pos] == '\\' && backslashed_string){
+                backslashed_string = false;
+                value += input[pos];
+            }
+            else if(input[pos] == '"' && !backslashed_string){
+               end_of_input = true;
+               break; 
+            }
+            else{
+                backslashed_string = false;
+                value += input[pos];
+            }
+
             pos++;
         }
         pos++ ; // skip ending quote

@@ -157,7 +157,6 @@ private:
 // TODO //
 // - Syntax checking
 // - Add support for comments?
-// - Actually parse the input
 
 class JsonParse{
 public:
