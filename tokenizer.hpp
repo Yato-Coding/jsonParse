@@ -69,7 +69,6 @@ private:
                 break;
             }
 
-
             if(input[pos] == '\\' && !backslashed_string){
                 backslashed_string = true;
                 value += input[pos];
