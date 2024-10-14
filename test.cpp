@@ -1,4 +1,4 @@
-#include "json.hpp"
+#include "include/json.hpp"
 #include <iostream>
 
 int main(){
@@ -33,7 +33,7 @@ int main(){
 
     JsonObject obj = json["person"]["address"];
     for(const auto& [key, value] : obj){
-        std::cout << key << ':' << *value << '\n';
+        std::cout << key << " : " << *value << '\n';
     }
     
 
