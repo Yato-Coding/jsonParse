@@ -1,6 +1,7 @@
 #ifndef JSON_VALUE_HPP
 #define JSON_VALUE_HPP
 
+#include <initializer_list>
 #include <memory>
 #include <stdexcept>
 #include "iterator.hpp"
@@ -65,6 +66,32 @@ public:
     template<typename T>
     operator T(){
         return getValue<T>();
+    }
+
+    void operator+=(const std::initializer_list<JsonValue>& list){
+        if(isArray()){
+            JsonArray& arr = std::get<JsonArray>(value);
+
+            for(const auto& element : list){
+            arr.push_back(std::make_shared<JsonValue>(element));
+            }
+        }
+        else{
+            throw std::runtime_error("This element is not an array");
+        }
+    }
+
+    void operator+=(const std::initializer_list<std::pair<const char*, JsonValue>>& list){
+        if(isObject()){
+            JsonObject& obj = std::get<JsonObject>(value);
+
+            for(const auto& [key, val] : list){
+                obj[key] = std::make_shared<JsonValue>(val);
+            }
+        }
+        else{
+            throw std::runtime_error("This element is not an object");
+        }
     }
 
     JsonValue& operator[](const std::string& key){

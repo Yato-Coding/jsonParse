@@ -18,7 +18,6 @@ int main(){
             {"city", "Somewhere"},
             {"zipcode", 12345},
         })}});    
-    json.write("testFile.json");
 
     // parsing test
     // JsonParse jsonParse;
@@ -26,16 +25,19 @@ int main(){
     // parse.write("testFile.json");
 
     // for loops
-    for(const auto& value : json["person"]["hobbies"]){
-        // std::cout << value.first << ' ' << *value.second << '\n';
-        std::cout << *value << '\n';
-    }
-
-    JsonObject obj = json["person"]["address"];
-    for(const auto& [key, value] : obj){
-        std::cout << key << " : " << *value << '\n';
-    }
+    // for(const auto& value : json["person"]["hobbies"]){
+    //     // std::cout << value.first << ' ' << *value.second << '\n';
+    //     std::cout << *value << '\n';
+    // }
+    //
+    // JsonObject obj = json["person"]["address"];
+    // for(const auto& [key, value] : obj){
+    //     std::cout << key << " : " << *value << '\n';
+    // }
     
+    json["person"] += {{"hello", Json::Array({"How", "Are", "You"})}};
+    json.write("testFile.json");
+    std::cout << json << std::endl;
 
     return 0;
     }
